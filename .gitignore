@@ -1,2 +1,5 @@
 src/*
+lib/*
+bin/*
+include/*
 build/*
