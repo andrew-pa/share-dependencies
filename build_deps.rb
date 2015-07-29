@@ -164,7 +164,7 @@ if freetype_status || force_build
     #if Windows upgrade VS2010 -> newest VS project files
     system("#{ENV['ProgramFiles(x86)']}\\Microsoft Visual Studio 12.0\\Common7\\IDE\\devenv.exe",
         freetype_path+"\\builds\\windows\\vc2010\\freetype.sln", "/Upgrade")
-
+    freetype_repo.commit_all('upgraded vc2010 sln file -> vc2013')
     #build freetype
     run_builder(freetype_path+"\\builds\\windows\\vc2010\\freetype.sln")
 
