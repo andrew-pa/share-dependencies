@@ -82,12 +82,14 @@ def run_builder_cmake(path)
     Process.wait spawn("cmake --build . --config Release", :chdir=>"#{path}/build")
 end
 
+
 def open_or_clone(spath, rpath)
+    force_force_build = ARGV.size > 1 && ARGV[1] == '-fb'
     ppath = "#{ARGV[0]}/src/#{spath}"
     if File.exist?(ppath + '/.git')
-        return Git.open(ppath), false
+        return Git.open(ppath), false || force_force_build
     else
-        return Git.clone(rpath, spath, :path=>"#{ARGV[0]}/src/"), true
+        return Git.clone(rpath, spath, :path=>"#{ARGV[0]}/src/"), true || force_force_build
     end
 end
 
@@ -139,13 +141,13 @@ if assimp_status || force_build
 
     #copy files
     robocopy(assimp_path + '/include', include_dir)
-    copy(assimp_path + '/build/code/Debug/assimp-vc120-mtd.dll', libd_dir+'/assimp.dll')
-    copy(assimp_path + '/build/code/Release/assimp-vc120-mt.dll', libr_dir+'/assimp.dll')
+    copy(assimp_path + '/build/code/Debug/assimp-*-mtd.dll', libd_dir)
+    copy(assimp_path + '/build/code/Release/assimp-*-mt.dll', libr_dir)
 
-    copy(assimp_path + '/build/code/Debug/assimp-vc120-mtd.lib', libd_dir+'/assimp.lib')
-    copy(assimp_path + '/build/code/Release/assimp-vc120-mt.lib', libr_dir+'/assimp.lib')
+    copy(assimp_path + '/build/code/Debug/assimp-*-mtd.lib', libd_dir)
+    copy(assimp_path + '/build/code/Release/assimp-*-mt.lib', libr_dir)
 
-    copy(assimp_path + '/build/code/Debug/assimp-vc120-mtd.pdb', libd_dir+'/assimp.pdb')
+    copy(assimp_path + '/build/code/Debug/assimp-*-mtd.pdb', libd_dir)
 else
     puts "Assimp up to date"
 end
@@ -162,9 +164,8 @@ if freetype_status || force_build
     end
 
     #if Windows upgrade VS2010 -> newest VS project files
-    system("#{ENV['ProgramFiles(x86)']}\\Microsoft Visual Studio 12.0\\Common7\\IDE\\devenv.exe",
+    system("#{ENV['ProgramFiles(x86)']}\\Microsoft Visual Studio 14.0\\Common7\\IDE\\devenv.exe",
         freetype_path+"\\builds\\windows\\vc2010\\freetype.sln", "/Upgrade")
-    freetype_repo.commit_all('upgraded vc2010 sln file -> vc2013')
     #build freetype
     run_builder(freetype_path+"\\builds\\windows\\vc2010\\freetype.sln")
 
@@ -250,7 +251,7 @@ if !existing_soil_src || (File.atime(soil_path) < File.atime(ARGV[0]+'/pack/soil
     puts("Building SOIL #{File.atime(soil_path)} < #{File.atime(ARGV[0]+'/pack/soil.zip')}")
 
     #if Windows upgrade VS2010 -> newest VS project files
-    system("#{ENV['ProgramFiles(x86)']}\\Microsoft Visual Studio 12.0\\Common7\\IDE\\devenv.exe",
+    system("#{ENV['ProgramFiles(x86)']}\\Microsoft Visual Studio 14.0\\Common7\\IDE\\devenv.exe",
         scrub_path("#{soil_src_path}\\projects\\VC9\\SOIL.sln"), "/Upgrade")
 
     #build
