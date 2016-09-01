@@ -1,2 +1,2 @@
-GLEW: 1.12.0
+GLEW: 2.0.0
 SOIL: Original July 7 2008 version

@@ -33,6 +33,25 @@ begin
 rescue
 end
 
+puts 'Share updating...'
+
+if File.exists? ARGV[0]+'/last-update-time'
+	lt = Time.at(File.readlines(ARGV[0]+'/last-update-time')[0].to_i)
+	if (Time.now - lt) >= 259200
+		puts "Updating, been #{Time.now - lt} seconds since last update"
+		f = File.open(ARGV[0]+'/last-update-time', 'w')
+		f.puts Time.now.to_i.to_s
+		f.close
+	else
+		puts "Already up-to-date, only been #{Time.now - lt} seconds since last check"
+		exit
+	end
+else
+	f = File.open(ARGV[0]+'/last-update-time', 'w')
+	f.puts Time.now.to_i.to_s
+	f.close
+end
+
 
 require 'zip'
 
@@ -153,6 +172,7 @@ else
 end
 
 #update freetype
+begin
 freetype_path = scrub_path(ARGV[0] + '/src/freetype')
 freetype_repo, force_build = open_or_clone('freetype', 'http://git.sv.nongnu.org/r/freetype/freetype2.git')
 freetype_status = update_repo(freetype_repo)
@@ -177,6 +197,9 @@ if freetype_status || force_build
 else
     puts "Freetype up to date"
 end
+rescue
+	puts "Freetype update failed"
+end
 
 def git_dep(disk_path, remote_path, git_dir, name, real_force_build)
     path = scrub_path(disk_path+git_dir)
@@ -198,7 +221,7 @@ end
 
 #update GLEW
 glew_path = scrub_path(ARGV[0] + '/src/glew')
-glew_version = '1.12.0'
+glew_version = '2.0.0'
 existing_glew_src = File.exist?(glew_path)
 begin
     Dir.mkdir(glew_path)
@@ -207,17 +230,22 @@ rescue
     existing_glew_src = true
 end
 
-if !existing_glew_src || (File.atime(glew_path) < File.atime(ARGV[0]+'/pack/glew.zip'))
+if true || !existing_glew_src || (File.atime(glew_path) < File.atime(ARGV[0]+'/pack/glew.zip'))
     #build GLEW
     puts("Building GLEW #{File.atime(glew_path)} < #{File.atime(ARGV[0]+'/pack/glew.zip')}")
     glew_src_path = glew_path + "/glew-#{glew_version}"
-    run_builder(glew_src_path + '/build/vc12/glew.sln')
+	glew_bld_path = glew_src_path + "/build/cmake/";
+	cmake(glew_src_path+"/build/cmake/", "")
+
+	run_builder_cmake(glew_src_path+"/build/cmake/")
+
     robocopy(glew_src_path + '/include', include_dir)
-    copy(glew_src_path + '/bin/Debug/Win32/glew32d.dll', libd_dir + '/glew32d.dll')
-    copy(glew_src_path + '/bin/Debug/Win32/glew32d.pdb', libd_dir + '/glew32d.pdb')
-    copy(glew_src_path + '/bin/Release/Win32/glew32.dll', libr_dir + '/glew32.dll')
-    copy(glew_src_path + '/lib/Debug/Win32/glew32d.lib', libd_dir + '/glew32.lib')
-    copy(glew_src_path + '/lib/Release/Win32/glew32.lib', libr_dir + '/glew32.lib')
+    copy(glew_bld_path + '/build/bin/Debug/glew32d.dll', libd_dir + '/glew32d.dll')
+    copy(glew_bld_path + '/build/bin/Debug/glew32d.pdb', libd_dir + '/glew32d.pdb')
+    copy(glew_bld_path + '/build/bin/Release/glew32.dll', libr_dir + '/glew32.dll')
+
+    copy(glew_bld_path + '/build/lib/Debug/glew32d.lib', libd_dir + '/glew32.lib')
+    copy(glew_bld_path + '/build/lib/Release/glew32.lib', libr_dir + '/glew32.lib')
 else
     puts("GLEW up to date")
 end
